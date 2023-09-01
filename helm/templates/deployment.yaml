@@ -3,7 +3,6 @@ kind: Deployment
 metadata:
   labels:
     app: {{ .Chart.Name }}
-    allow-harbor-credentials: "true" 
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/name: {{  .Chart.Name }}
     app.kubernetes.io/version: {{ .Chart.AppVersion }}
