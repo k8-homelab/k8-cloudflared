@@ -3,6 +3,9 @@ name: deploy
 on:
   workflow_dispatch:
   push:
+    paths-ignore:
+      - 'README.md'
+      
     branches:
       - 'main'
 
