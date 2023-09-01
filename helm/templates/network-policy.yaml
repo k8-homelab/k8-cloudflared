@@ -1,0 +1,128 @@
+# Allow cloudflare to talk to Nginx load balancer
+apiVersion: networking.k8s.io/v1 
+kind: NetworkPolicy 
+metadata:   
+  name: cloudflared-allow-http
+  namespace: {{ .Values.namespace }}
+spec:   
+  podSelector: 
+    matchLabels:
+      app: {{ .Chart.Name }}
+  
+  policyTypes:   
+  - Egress
+  - Ingress
+  ingress:
+    - from: 
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+        podSelector:
+          matchLabels:
+            app.kubernetes.io/name: rke2-ingress-nginx
+      ports:
+      - protocol: TCP       
+        port: 80
+      - protocol: TCP       
+        port: 443
+  egress:
+    - to: 
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+        podSelector:
+          matchLabels:
+            app.kubernetes.io/name: rke2-ingress-nginx
+      ports:
+      - protocol: TCP
+        port: 80
+      - protocol: TCP       
+        port: 443
+---
+# Allow cloudflare to talk to DNS servers
+apiVersion: networking.k8s.io/v1 
+kind: NetworkPolicy 
+metadata:   
+  name: cloudflared-allow-dns
+  namespace: {{ .Values.namespace }}
+spec:   
+  podSelector: 
+    matchLabels:
+      app: {{ .Chart.Name }}
+  policyTypes:   
+  - Egress
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: rke2-coredns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: rke2-coredns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+---
+#https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/install-and-setup/ports-and-ips/
+apiVersion: networking.k8s.io/v1 
+kind: NetworkPolicy 
+metadata:   
+  name: cloudflared-allow-cloudflare-tunnel
+  namespace: {{ .Values.namespace }}
+spec:   
+  podSelector: 
+    matchLabels:
+      app: {{ .Chart.Name }}
+  policyTypes:   
+  - Egress
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 198.41.192.0/24
+    - ipBlock:
+        cidr: 198.41.200.0/24
+    ports:
+    - protocol: UDP
+      port: 7844
+    - protocol: TCP
+      port: 7844
+---
+#https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/install-and-setup/ports-and-ips/
+apiVersion: networking.k8s.io/v1 
+kind: NetworkPolicy 
+metadata:   
+  name: cloudflared-allow-api
+  namespace: {{ .Values.namespace }}
+spec:   
+  podSelector: 
+    matchLabels:
+      app: {{ .Chart.Name }}
+  policyTypes:   
+  - Egress
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 104.19.192.0/24
+    - ipBlock:
+        cidr: 104.18.24.0/24
+    - ipBlock:
+        cidr: 104.18.25.0/24
+    ports:
+    - protocol: TCP
+      port: 443

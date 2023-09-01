@@ -1,0 +1,14 @@
+apiVersion: skaffold/v2beta25
+kind: config
+deploy:
+  helm:
+    hooks:
+      before:
+      - host:
+          command: ["helm", "dependency", "update", "helm"]
+    releases:
+    - name: k8-cloudflared
+      chartPath: helm
+      valuesFiles:
+      - helm/values.yaml
+      upgradeOnChange: true

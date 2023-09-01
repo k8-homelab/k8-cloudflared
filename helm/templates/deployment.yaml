@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Chart.Name }}
+    allow-harbor-credentials: "true" 
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: {{  .Chart.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+  name: {{ .Chart.Name }}
+  namespace: {{ .Values.namespace }}
+
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+
+    spec:
+      imagePullSecrets:
+        - name: harbor-credentials
+
+      containers:
+      - name: {{ .Chart.Name }}
+        image: registry.hibbard.dev/proxy/cloudflare/cloudflared:2023.7.3
+        imagePullPolicy: Always
+        
+        env:
+        - name: CLOUDFLARE-TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: cloudflare-token
+              key: token
+              
+        args: ["tunnel", "--no-autoupdate", "--loglevel", "debug", "run", "--token=$(CLOUDFLARE-TOKEN)"]
+        resources:
+          requests:
+            memory: "25Mi"
+            cpu: "10m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+
+        securityContext:
+          runAsUser: 65532
+          runAsGroup: 65532
+          runAsNonRoot: true
+
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 60
